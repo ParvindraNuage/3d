@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>911 Carrera — Guards Red</title>
+<style>
+  :root {
+    --black: #0a0a0a;
+    --charcoal: #121212;
+    --panel: #1b1b1b;
+    --white: #f5f5f5;
+    --grey: rgba(245,245,245,.6);
+    --grey-dim: rgba(245,245,245,.4);
+    --line: rgba(245,245,245,.1);
+    --red: #d5001c;
+    --red-deep: #8c0013;
+    --ease: cubic-bezier(.16,.84,.44,1);
+    --ease-soft: cubic-bezier(.22,.61,.36,1);
+    --dur-fast: .3s;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--black); color: var(--white); line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  img { max-width: 100%; display: block; }
+
+  .skip-link {
+    position: absolute; top: -48px; left: 16px;
+    background: var(--red); color: #fff; padding: 12px 20px; border-radius: 4px; z-index: 100;
+    text-decoration: none; font-weight: 700;
+    transition: top var(--dur-fast) var(--ease);
+  }
+  .skip-link:focus { top: 16px; }
+  :focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
+
+  /* NAV */
+  .nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 40;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 22px clamp(20px, 5vw, 56px);
+    background: linear-gradient(180deg, rgba(10,10,10,.65), transparent);
+  }
+  .nav-logo { font-weight: 800; font-size: 1.02rem; letter-spacing: .18em; text-transform: uppercase; text-decoration: none; }
+  .nav-links { display: flex; gap: 28px; list-style: none; }
+  .nav-links a {
+    text-decoration: none; font-size: .8rem; font-weight: 600; letter-spacing: .04em;
+    text-transform: uppercase; color: var(--grey);
+    transition: color var(--dur-fast) var(--ease);
+  }
+  .nav-links a:hover { color: var(--white); }
+  .nav-cta {
+    background: var(--red); color: #fff; padding: 10px 22px; border-radius: 2px;
+    font-weight: 700; font-size: .78rem; letter-spacing: .04em; text-transform: uppercase;
+    text-decoration: none;
+    transition: background var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+  }
+  .nav-cta:hover { background: var(--red-deep); transform: translateY(-2px); }
+  @media (max-width: 720px) { .nav-links { display: none; } }
+
+  /* ============ HERO — autoplaying, looping, slow-motion film ============ */
+  .hero {
+    position: relative; height: 100vh; min-height: 100vh; width: 100%; overflow: hidden;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: var(--black);
+  }
+  .hero-canvas, .hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
+  .hero-static-fallback { display: none; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
+  .hero-overlay {
+    position: absolute; inset: 0; z-index: 2;
+    background: radial-gradient(circle at center, rgba(10,10,10,0.15) 0%, rgba(10,10,10,0.6) 100%),
+                linear-gradient(180deg, rgba(10,10,10,0.5) 0%, rgba(10,10,10,0.15) 40%, rgba(10,10,10,0.75) 100%);
+    pointer-events: none;
+  }
+  .hero-content {
+    position: relative; z-index: 10; text-align: center; padding: 0 24px; max-width: 900px;
+    opacity: 0; transform: translateY(18px);
+    animation: heroIn 1.3s var(--ease-soft) .3s forwards;
+    pointer-events: auto;
+  }
+  @keyframes heroIn { to { opacity: 1; transform: translateY(0); } }
+  .hero-content h1 {
+    font-size: clamp(3.2rem, 9.5vw, 6.8rem); font-weight: 800; letter-spacing: -0.03em; line-height: .96;
+    margin-bottom: 18px; text-shadow: 0 4px 30px rgba(0,0,0,0.85);
+  }
+  .hero-content p {
+    font-size: clamp(1rem, 1.8vw, 1.25rem); color: rgba(245,245,245,0.92); font-weight: 500;
+    letter-spacing: .02em; text-shadow: 0 2px 20px rgba(0,0,0,0.9);
+  }
+  .hero-scroll-cue {
+    position: absolute; bottom: 34px; left: 50%; transform: translateX(-50%); z-index: 10;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    color: var(--grey-dim); font-size: .68rem; letter-spacing: .18em; text-transform: uppercase;
+    opacity: 0; animation: fadeIn .8s var(--ease) 1.4s forwards;
+  }
+  @keyframes fadeIn { to { opacity: 1; } }
+  .hero-scroll-cue .dot-track { width: 24px; height: 38px; border: 2px solid rgba(245,245,245,.35); border-radius: 20px; position: relative; }
+  .hero-scroll-cue .dot-track::before {
+    content: ''; position: absolute; top: 7px; left: 50%; transform: translateX(-50%);
+    width: 4px; height: 8px; border-radius: 2px; background: var(--red);
+    animation: scrollDot 1.6s ease infinite;
+  }
+  @keyframes scrollDot { 0% { opacity: 1; top: 7px; } 70% { opacity: 0; top: 19px; } 100% { opacity: 0; top: 7px; } }
+
+  /* ============ STORY SECTIONS — text + scroll-controlled video, one frame ============ */
+  .story-section { position: relative; height: 260vh; }
+  .story-sticky {
+    position: sticky; top: 0; height: 100vh; overflow: hidden;
+    display: grid; place-items: center; background: var(--black);
+  }
+  .story-canvas { width: 100%; height: 100%; object-fit: cover; }
+  .story-static-fallback { display: none; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .story-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(10,10,10,.45) 0%, transparent 40%, rgba(10,10,10,.2) 60%, rgba(10,10,10,.85) 100%);
+    pointer-events: none;
+  }
+  .story-text {
+    position: absolute; left: clamp(20px, 6vw, 64px); bottom: clamp(56px, 11vw, 128px);
+    z-index: 2; max-width: 600px;
+  }
+  .story-text > * {
+    opacity: 0; transform: translateY(24px);
+    transition: opacity .8s var(--ease-soft), transform .8s var(--ease-soft);
+  }
+  .story-text .num { transition-delay: .05s; }
+  .story-text h2 { transition-delay: .18s; }
+  .story-text p { transition-delay: .32s; }
+  .story-text .story-stats { transition-delay: .46s; }
+  .story-text.is-visible > * { opacity: 1; transform: translateY(0); }
+
+  .story-text .num {
+    display: block; font-size: .76rem; font-weight: 700; letter-spacing: .22em;
+    text-transform: uppercase; color: var(--red); margin-bottom: 16px;
+  }
+  .story-text h2 {
+    font-size: clamp(2rem, 4.6vw, 3.4rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.08;
+    margin-bottom: 16px;
+  }
+  .story-text p { color: var(--grey); font-size: clamp(.95rem, 1.4vw, 1.08rem); max-width: 480px; }
+
+  .story-stats { margin-top: 32px; display: flex; gap: clamp(24px, 5vw, 48px); flex-wrap: wrap; }
+  .story-stats .stat strong {
+    display: block; font-size: clamp(1.5rem, 3vw, 2.1rem); font-weight: 800; color: var(--red); letter-spacing: -0.01em;
+  }
+  .story-stats .stat strong .unit { font-size: .78rem; color: var(--white); font-weight: 600; margin-left: 3px; }
+  .story-stats .stat span { font-size: .7rem; letter-spacing: .05em; text-transform: uppercase; color: var(--grey); }
+
+  /* Literal breathing room between one story section and the next —
+     no content, just intentional space so two videos never touch. */
+  .section-gap { height: 9vh; background: var(--black); }
+
+  /* MAIN SECTIONS */
+  main { position: relative; z-index: 1; background: var(--black); }
+  .section { padding: clamp(80px, 10vw, 130px) clamp(20px, 5vw, 56px); max-width: 1160px; margin: 0 auto; }
+  .section-head { text-align: center; max-width: 640px; margin: 0 auto 64px; }
+  .section-head .eyebrow-sm { display: block; font-size: .78rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--red); margin-bottom: 14px; }
+  .section-head h2 { font-size: clamp(1.9rem, 4vw, 2.8rem); font-weight: 800; letter-spacing: -0.02em; margin-bottom: 14px; }
+  .section-head p { color: var(--grey); }
+
+  .spec-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .spec-card { background: var(--charcoal); padding: 36px 24px; text-align: center; }
+  .spec-card strong { display: block; font-size: clamp(1.9rem, 4vw, 2.5rem); font-weight: 800; letter-spacing: -0.02em; margin-bottom: 8px; }
+  .spec-card strong .unit { font-size: .95rem; color: var(--grey); font-weight: 600; margin-left: 4px; }
+  .spec-card span { color: var(--grey); font-size: .82rem; letter-spacing: .04em; text-transform: uppercase; }
+
+  .engine-showcase {
+    position: relative; margin: 40px 0; border-radius: 6px; overflow: hidden;
+    border: 1px solid var(--line); box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+  }
+  .engine-showcase img {
+    width: 100%; max-height: 540px; object-fit: cover; display: block;
+    transition: transform 0.8s var(--ease-soft);
+  }
+  .engine-showcase:hover img { transform: scale(1.03); }
+  .engine-showcase-caption {
+    position: absolute; bottom: 0; left: 0; right: 0; padding: 28px 32px;
+    background: linear-gradient(0deg, rgba(10,10,10,0.92) 0%, rgba(10,10,10,0.45) 70%, transparent 100%);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .engine-showcase-caption .tag {
+    display: inline-block; align-self: flex-start; background: var(--red); color: #fff;
+    font-size: .72rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+    padding: 4px 12px; border-radius: 2px;
+  }
+  .engine-showcase-caption h3 { font-size: clamp(1.2rem, 2.4vw, 1.7rem); font-weight: 800; letter-spacing: -0.01em; }
+
+  .engine-detail { margin-top: 40px; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; }
+  .engine-detail .feature-card { padding: 32px 28px; border-radius: 4px; background: var(--panel); border: 1px solid var(--line); border-top: 3px solid var(--red); }
+  .engine-detail h3 { font-size: 1.1rem; margin-bottom: 8px; }
+  .engine-detail p { color: var(--grey); font-size: .92rem; }
+
+  .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .gallery-grid img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 4px; }
+  @media (max-width: 720px) { .gallery-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+  .price-card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 36px 28px; display: flex; flex-direction: column; }
+  .price-card.featured { border-color: var(--red); position: relative; }
+  .price-card.featured::before {
+    content: 'Most Popular'; position: absolute; top: -12px; left: 28px;
+    background: var(--red); color: #fff; font-size: .7rem; font-weight: 700;
+    letter-spacing: .06em; text-transform: uppercase; padding: 5px 12px; border-radius: 999px;
+  }
+  .price-card h3 { font-size: 1.3rem; margin-bottom: 6px; }
+  .price-card .price { font-size: clamp(1.6rem, 3vw, 2rem); font-weight: 800; margin-bottom: 4px; }
+  .price-card .price-note { color: var(--grey); font-size: .78rem; margin-bottom: 22px; }
+  .price-card ul { list-style: none; margin-bottom: 28px; flex-grow: 1; }
+  .price-card li { color: var(--grey); font-size: .9rem; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .price-card li:last-child { border-bottom: none; }
+  .pricing-disclaimer { margin-top: 32px; text-align: center; color: var(--grey); font-size: .8rem; max-width: 640px; margin-left: auto; margin-right: auto; }
+
+  .btn {
+    display: inline-block; padding: 15px 34px; border-radius: 2px;
+    font-weight: 700; font-size: .88rem; letter-spacing: .05em; text-transform: uppercase;
+    text-decoration: none;
+    transition: transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+  }
+  .btn-primary { background: var(--red); color: #fff; }
+  .btn-primary:hover { background: var(--red-deep); transform: translateY(-3px); box-shadow: 0 14px 32px rgba(213,0,28,.4); }
+  .btn-ghost { background: transparent; border: 1px solid rgba(245,245,245,.35); color: var(--white); }
+  .btn-ghost:hover { border-color: var(--white); background: rgba(245,245,245,.08); transform: translateY(-3px); }
+
+  .cta-band {
+    text-align: center; padding: clamp(56px, 8vw, 100px) 24px; border-radius: 4px;
+    background: linear-gradient(135deg, rgba(213,0,28,.16), rgba(10,10,10,.4));
+    border: 1px solid rgba(213,0,28,.25);
+  }
+  .cta-band h2 { font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 800; margin-bottom: 16px; letter-spacing: -0.02em; }
+  .cta-band p { color: var(--grey); margin-bottom: 32px; }
+
+  [data-reveal] { opacity: 0; transform: translateY(28px); transition: opacity .7s var(--ease), transform .7s var(--ease); }
+  [data-reveal].is-visible { opacity: 1; transform: translateY(0); }
+
+  footer {
+    border-top: 1px solid var(--line); padding: 40px clamp(20px, 5vw, 56px);
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+    color: var(--grey); font-size: .85rem;
+  }
+  footer .foot-links { display: flex; gap: 24px; list-style: none; }
+  footer a { text-decoration: none; color: var(--grey); transition: color var(--dur-fast); }
+  footer a:hover { color: var(--white); }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .hero-canvas { display: none; }
+    .hero-static-fallback { display: block; }
+    .hero-content { animation: none; opacity: 1; transform: none; }
+    .hero-scroll-cue { display: none; }
+    .story-section { height: auto; }
+    .story-sticky { position: relative; height: 90vh; }
+    .story-canvas { display: none; }
+    .story-static-fallback { display: block; }
+    .story-text > * { transition: none !important; opacity: 1 !important; transform: none !important; }
+    [data-reveal] { transition: none !important; opacity: 1 !important; transform: none !important; }
+    .price-card:hover, .btn:hover, .nav-cta:hover { transform: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<nav class="nav" aria-label="Primary">
+  <a href="#" class="nav-logo">911 Carrera</a>
+  <ul class="nav-links">
+    <li><a href="#engine">Engine</a></li>
+    <li><a href="#gallery">Gallery</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+  </ul>
+  <a href="#pricing" class="nav-cta">Configure</a>
+</nav>
+
+<!-- HERO — 100vh autoplaying, looping, slow-motion film with text overlay. -->
+<section class="hero" aria-label="Hero Showcase">
+  <video id="hero-video" class="hero-video" autoplay loop muted playsinline style="display:none;"></video>
+  <canvas id="hero-canvas" class="hero-canvas"></canvas>
+  <img class="hero-static-fallback" src="frames/frame-0001.jpg" alt="Red Porsche 911 Carrera, front three-quarter view, studio lighting.">
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <h1>911 Carrera</h1>
+    <p>Born from heritage. Engineered for speed.</p>
+  </div>
+  <div class="hero-scroll-cue">
+    <span>Scroll</span>
+    <div class="dot-track"></div>
+  </div>
+</section>
+
+<!-- STORY 02 — Exterior Design: bold type + scroll-controlled video, one composition -->
+<section class="story-section" data-frame-start="33" data-frame-end="64" aria-hidden="true">
+  <div class="story-sticky">
+    <canvas class="story-canvas"></canvas>
+    <img class="story-static-fallback" src="frames/frame-0033.jpg" alt="Red Porsche 911 Carrera, exterior design detail.">
+    <div class="story-overlay"></div>
+    <div class="story-text">
+      <span class="num">02 — Exterior Design</span>
+      <h2>An unmistakable shape, refined over generations.</h2>
+      <p>Every panel gap, every curve — considered from the first sketch to the final clay model.</p>
+    </div>
+  </div>
+</section>
+<div class="section-gap"></div>
+
+<!-- STORY 03 — Finish -->
+<section class="story-section" data-frame-start="65" data-frame-end="96" aria-hidden="true">
+  <div class="story-sticky">
+    <canvas class="story-canvas"></canvas>
+    <img class="story-static-fallback" src="frames/frame-0065.jpg" alt="Close-up of red paint curves and reflections.">
+    <div class="story-overlay"></div>
+    <div class="story-text">
+      <span class="num">03 — Finish</span>
+      <h2>Guards Red, layered to perfection.</h2>
+      <p>A deep, saturated color built from multiple coats and hand-finished to a mirror-grade shine.</p>
+    </div>
+  </div>
+</section>
+<div class="section-gap"></div>
+
+<!-- STORY 04 — Engineering (with stats) -->
+<section class="story-section" data-frame-start="97" data-frame-end="128" aria-hidden="true">
+  <div class="story-sticky">
+    <canvas class="story-canvas"></canvas>
+    <img class="story-static-fallback" src="frames/frame-0097.jpg" alt="Red Porsche 911 Carrera engineering detail.">
+    <div class="story-overlay"></div>
+    <div class="story-text">
+      <span class="num">04 — Engineering</span>
+      <h2>Precision, down to the millimeter.</h2>
+      <p>A twin-turbo flat-six and 8-speed PDK tuned to deliver power the instant you ask for it.</p>
+      <div class="story-stats">
+        <div class="stat"><strong>379<span class="unit">hp</span></strong><span>Max Power</span></div>
+        <div class="stat"><strong>331<span class="unit">lb-ft</span></strong><span>Torque</span></div>
+        <div class="stat"><strong>4.0<span class="unit">s</span></strong><span>0&ndash;60 mph</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="section-gap"></div>
+
+<!-- STORY 05 — Presence -->
+<section class="story-section" data-frame-start="129" data-frame-end="160" aria-hidden="true">
+  <div class="story-sticky">
+    <canvas class="story-canvas"></canvas>
+    <img class="story-static-fallback" src="frames/frame-0129.jpg" alt="Red Porsche 911 Carrera in dramatic studio lighting.">
+    <div class="story-overlay"></div>
+    <div class="story-text">
+      <span class="num">05 — Presence</span>
+      <h2>Command the room before you turn the key.</h2>
+      <p>A wide stance, a low roofline, and a silhouette that hasn't needed to shout since 1963.</p>
+    </div>
+  </div>
+</section>
+<div class="section-gap"></div>
+
+<!-- STORY 06 — Cabin -->
+<section class="story-section" data-frame-start="161" data-frame-end="192" aria-hidden="true">
+  <div class="story-sticky">
+    <canvas class="story-canvas"></canvas>
+    <img class="story-static-fallback" src="frames/frame-0161.jpg" alt="Black leather interior with red stitching detail.">
+    <div class="story-overlay"></div>
+    <div class="story-text">
+      <span class="num">06 — Cabin</span>
+      <h2>Every control, angled toward you.</h2>
+      <p>A cockpit built around the driver, not around the options list.</p>
+    </div>
+  </div>
+</section>
+
+<main id="main">
+  <section class="section" id="engine">
+    <div class="section-head" data-reveal>
+      <span class="eyebrow-sm">Engine &amp; Performance</span>
+      <h2>Built for the drive, not just the destination</h2>
+      <p>A twin-turbo flat-six tuned for immediate response, and a chassis built to disappear beneath you.</p>
+    </div>
+    <div class="spec-grid" data-reveal>
+      <div class="spec-card"><strong>379<span class="unit">hp</span></strong><span>Max Power</span></div>
+      <div class="spec-card"><strong>331<span class="unit">lb-ft</span></strong><span>Peak Torque</span></div>
+      <div class="spec-card"><strong>4.0<span class="unit">sec</span></strong><span>0&ndash;60 mph</span></div>
+      <div class="spec-card"><strong>182<span class="unit">mph</span></strong><span>Top Track Speed</span></div>
+      <div class="spec-card"><strong>3.0<span class="unit">L</span></strong><span>Twin-Turbo Flat-Six</span></div>
+      <div class="spec-card"><strong>8<span class="unit">spd</span></strong><span>PDK Transmission</span></div>
+    </div>
+    <div class="engine-showcase" data-reveal>
+      <img src="engine.jpg" alt="Porsche 911 Carrera 3.0L Twin-Turbo Flat-Six Boxer Engine">
+      <div class="engine-showcase-caption">
+        <span class="tag">3.0L Twin-Turbo Flat-Six</span>
+        <h3>Engineering mastery behind every throttle response</h3>
+      </div>
+    </div>
+    <div class="engine-detail" data-reveal>
+      <div class="feature-card"><h3>Rear-Engine Balance</h3><p>Six decades of refinement, tuned for sharp turn-in and confident weight transfer.</p></div>
+      <div class="feature-card"><h3>PASM Sport Suspension</h3><p>Adaptive dampers read the road in real time — comfort and control without a compromise.</p></div>
+      <div class="feature-card"><h3>Rear-Axle Steering</h3><p>Tighter low-speed maneuvering, added high-speed stability.</p></div>
+    </div>
+  </section>
+
+  <section class="section" id="gallery">
+    <div class="section-head" data-reveal>
+      <span class="eyebrow-sm">Gallery</span>
+      <h2>Every angle, considered</h2>
+    </div>
+    <div class="gallery-grid" data-reveal>
+      <img src="frames/frame-0001.jpg" alt="Red Porsche 911 Carrera parked, front three-quarter view.">
+      <img src="frames/frame-0040.jpg" alt="Red Porsche 911 Carrera, orbiting exterior view.">
+      <img src="frames/frame-0075.jpg" alt="Close-up of red paint curves and reflections.">
+      <img src="frames/frame-0105.jpg" alt="Close-up of wheel and brake caliper.">
+      <img src="frames/frame-0140.jpg" alt="Red Porsche 911 Carrera in dramatic studio lighting.">
+      <img src="frames/frame-0175.jpg" alt="Black leather interior with red stitching detail.">
+    </div>
+  </section>
+
+  <section class="section" id="pricing">
+    <div class="section-head" data-reveal>
+      <span class="eyebrow-sm">Pricing</span>
+      <h2>Choose your 911</h2>
+      <p>Four ways into the Carrera range — from purist to performance-focused.</p>
+    </div>
+    <div class="pricing-grid" data-reveal>
+      <div class="price-card">
+        <h3>Carrera</h3><div class="price">$137,850</div><div class="price-note">Starting MSRP*</div>
+        <ul><li>379 hp / 331 lb-ft</li><li>3.0L twin-turbo flat-six</li><li>8-speed PDK, rear-wheel drive</li><li>0&ndash;60 mph in 4.0 sec</li></ul>
+        <a href="#" class="btn btn-ghost">Build Yours</a>
+      </div>
+      <div class="price-card featured">
+        <h3>Carrera S</h3><div class="price">$156,200</div><div class="price-note">Starting MSRP*</div>
+        <ul><li>473 hp / 390 lb-ft</li><li>3.0L twin-turbo flat-six</li><li>8-speed PDK, rear-wheel drive</li><li>0&ndash;60 mph in 3.3 sec</li></ul>
+        <a href="#" class="btn btn-primary">Build Yours</a>
+      </div>
+      <div class="price-card">
+        <h3>Carrera T</h3><div class="price">$148,000</div><div class="price-note">Starting MSRP*</div>
+        <ul><li>388 hp, purist-focused</li><li>6-speed manual, GT3 linkage</li><li>PASM Sport Suspension std.</li><li>Rear-axle steering std.</li></ul>
+        <a href="#" class="btn btn-ghost">Build Yours</a>
+      </div>
+      <div class="price-card">
+        <h3>Carrera GTS</h3><div class="price">$166,895</div><div class="price-note">Starting MSRP* &middot; Hybrid</div>
+        <ul><li>T-Hybrid powertrain</li><li>Sport Chrono std.</li><li>Adaptive sport seats std.</li><li>Widest range in the lineup</li></ul>
+        <a href="#" class="btn btn-ghost">Build Yours</a>
+      </div>
+    </div>
+    <p class="pricing-disclaimer" data-reveal>*Starting MSRP excludes tax, title, registration, destination, and dealer fees; based on published 2026 model-year pricing and subject to change. Confirm current pricing with your local Porsche dealer.</p>
+  </section>
+
+  <section class="section">
+    <div class="cta-band" data-reveal>
+      <h2>Build your 911 Carrera</h2>
+      <p>Choose your finish, interior, and performance package.</p>
+      <a href="#" class="btn btn-primary">Start Configuring</a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span>&copy; 2026 911 Carrera Concept Page. Independent fan project — not affiliated with Porsche AG. Pricing is illustrative and subject to change.</span>
+  <ul class="foot-links"><li><a href="#">Privacy</a></li><li><a href="#">Terms</a></li></ul>
+</footer>
+
+<script>
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function frameSrc(i) { return `frames/frame-${String(i).padStart(4, '0')}.jpg`; }
+
+  function drawCoverImage(ctx, img, canvas) {
+    if (!img || !img.complete) return;
+    const w = canvas.clientWidth || window.innerWidth;
+    const h = canvas.clientHeight || window.innerHeight;
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+    }
+    const imgW = img.naturalWidth || 1920;
+    const imgH = img.naturalHeight || 1080;
+    const imgRatio = imgW / imgH;
+    const canvasRatio = w / h;
+    let rw, rh, ox, oy;
+    if (canvasRatio > imgRatio) {
+      rw = w;
+      rh = w / imgRatio;
+      ox = 0;
+      oy = (h - rh) / 2;
+    } else {
+      rh = h;
+      rw = h * imgRatio;
+      ox = (w - rw) / 2;
+      oy = 0;
+    }
+    ctx.clearRect(0, 0, w, h);
+    ctx.drawImage(img, ox, oy, rw, rh);
+  }
+
+  /* ---------- HERO: autoplaying, looping, slow-motion video / frame sequence ---------- */
+  (function setupHero() {
+    const heroVideo = document.getElementById('hero-video');
+    const canvas = document.getElementById('hero-canvas');
+    const ctx = canvas ? canvas.getContext('2d') : null;
+
+    if (heroVideo) {
+      heroVideo.playbackRate = 0.25; // Very slow playback speed (25% rate)
+      if (heroVideo.src && heroVideo.src !== window.location.href) {
+        heroVideo.style.display = 'block';
+        if (canvas) canvas.style.display = 'none';
+        heroVideo.play().catch(() => {});
+        return;
+      }
+    }
+
+    if (!canvas || !ctx) return;
+    const start = 1, end = 32;
+    const images = [];
+    for (let i = start; i <= end; i++) {
+      const img = new Image();
+      img.src = frameSrc(i);
+      images[i] = img;
+    }
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      drawCoverImage(ctx, images[i], canvas);
+    }
+    window.addEventListener('resize', resize);
+
+    let i = start, dir = 1;
+    function draw() {
+      drawCoverImage(ctx, images[i], canvas);
+    }
+
+    if (images[start]) {
+      if (images[start].complete) resize();
+      else images[start].onload = resize;
+    }
+
+    if (!prefersReduced) {
+      // 250ms per frame = ultra slow motion, cinematic pan
+      setInterval(() => {
+        i += dir;
+        if (i >= end) { i = end; dir = -1; }
+        else if (i <= start) { i = start; dir = 1; }
+        draw();
+      }, 250);
+    }
+  })();
+
+  /* ---------- STORY SECTIONS: bold text + scroll-controlled video, unified ---------- */
+  const HOLD_IN = 0.12, HOLD_OUT = 0.16;
+
+  const stories = Array.from(document.querySelectorAll('.story-section')).map(section => {
+    const canvas = section.querySelector('.story-canvas');
+    const ctx = canvas.getContext('2d');
+    const start = Number(section.dataset.frameStart);
+    const end = Number(section.dataset.frameEnd);
+    const images = [];
+
+    function preloadRange(a, b) {
+      for (let i = Math.max(a, start); i <= Math.min(b, end); i++) {
+        if (images[i]) continue;
+        const img = new Image();
+        img.src = frameSrc(i);
+        images[i] = img;
+      }
+    }
+    function resize() { canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; }
+    function draw(i) {
+      const img = images[i];
+      if (!img || !img.complete) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    }
+
+    const textEl = section.querySelector('.story-text');
+    return { section, canvas, start, end, images, preloadRange, resize, draw, textEl };
+  });
+
+  function onScroll() {
+    stories.forEach(s => {
+      const rect = s.section.getBoundingClientRect();
+      const total = s.section.offsetHeight - window.innerHeight;
+      const scrolled = Math.min(Math.max(-rect.top, 0), total);
+      const progress = total > 0 ? scrolled / total : 0;
+      const inView = rect.bottom > 0 && rect.top < window.innerHeight;
+
+      const span = 1 - HOLD_IN - HOLD_OUT;
+      const scrub = Math.min(1, Math.max(0, (progress - HOLD_IN) / span));
+      const frameCount = s.end - s.start + 1;
+      const frameIndex = Math.min(s.end, Math.max(s.start, s.start + Math.round(scrub * (frameCount - 1))));
+
+      if (inView) {
+        s.draw(frameIndex);
+        s.preloadRange(frameIndex, frameIndex + 8);
+      }
+    });
+  }
+
+  if (!prefersReduced) {
+    stories.forEach(s => {
+      s.preloadRange(s.start, s.start + 12);
+      s.resize();
+      const first = s.images[s.start];
+      if (first) first.onload = () => s.draw(s.start);
+    });
+    window.addEventListener('resize', () => { stories.forEach(s => s.resize()); onScroll(); });
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+
+  // Bold headline entrance — fires once as each section enters the viewport,
+  // so text and video always arrive together as a single composition.
+  const storyIO = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) { entry.target.classList.add('is-visible'); storyIO.unobserve(entry.target); }
+    });
+  }, { threshold: 0.35 });
+  stories.forEach(s => storyIO.observe(s.textEl));
+
+  const revealEls = document.querySelectorAll('[data-reveal]');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) { entry.target.classList.add('is-visible'); io.unobserve(entry.target); }
+    });
+  }, { threshold: 0.15 });
+  revealEls.forEach(el => io.observe(el));
+
+  if (prefersReduced) {
+    revealEls.forEach(el => el.classList.add('is-visible'));
+    stories.forEach(s => s.textEl.classList.add('is-visible'));
+  }
+</script>
+
+</body>
+</html>
